@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<link rel="shortcut icon" href="favicon.ico" type="image/x-icon" />
+<title>XQuery playground</title>
+<style>
+
+body > .wrap {
+   max-width: 760px;
+   margin: 40px auto 0px;
+}
+
+#container {
+   font-family: Arial;
+}
+
+#markup {
+   min-width: 500px;
+   min-height: 180px;
+}
+
+#recent_queries {
+   margin-top: 10px;
+   font-family: Arial;
+   font-size: 14px;
+}
+#recent_queries > div {
+   margin: 3px 0px;
+   cursor: pointer;
+}
+
+</style>
+<script src="xquery.js"></script>
+<script type="text/javascript">
+
+var cur_els = []
+var recent_queries = []
+
+function updateHTML() {
+   document.getElementById('container').innerHTML = document.getElementById('markup').value
+}
+
+function findElement() {
+   for (var i = 0; i < cur_els.length; i++) {
+      cur_els[i].style.background = ''
+   }
+   var query = document.getElementById('query').value.trim()
+   var result = query.length ? document.find(query) : null
+   for (var i = 0; i < result.length; i++) {
+      result[i].style.background = 'rgba(238, 138, 0, 0.3)'
+   }
+   cur_els = result
+   while (recent_queries.indexOf(query) != -1) {
+      recent_queries.splice(recent_queries.indexOf(query), 1)
+   }
+   recent_queries.unshift(query)
+   if (recent_queries.length > 10) {
+      recent_queries.splice(0, recent_queries.length - 10)
+   }
+   if ('localStorage' in window && 'JSON' in window) {
+      window.localStorage.recent = JSON.stringify(recent_queries)
+   }
+   updateRecentQueries()
+}
+
+function updateRecentQueries() {
+   var c = document.getElementById('recent_queries')
+   c.innerHTML = ''
+   for (var i = 0; i < recent_queries.length; i++) {
+      var el = document.createElement('div')
+      el.innerHTML = recent_queries[i]
+      el.data = recent_queries[i]
+      el.onclick = function() {
+         document.getElementById('query').value = this.data
+         findElement()
+      }
+      c.appendChild(el)
+   }
+}
+
+window.addEventListener('load', function() {
+   if ('localStorage' in window && 'JSON' in window) {
+      if (window.localStorage.recent.length) {
+         try { recent_queries = JSON.parse(window.localStorage.recent) } catch (ex) {}
+      }
+      updateRecentQueries()
+   }
+   document.getElementById('markup').value = document.getElementById('container').innerHTML.trim()
+   if (document.getElementById('query').value.trim().length) findElement()
+})
+
+</script>
+</head>
+<body>
+   <div class="wrap">
+      <p id="container">
+         Some text and a <a class="link red" id="link" href="">link</a> and <span>another</span> <a href="">one</a>
+      </p>
+      <form style="margin-top: 20px">
+         <div>
+            <div style="font-size: 12px; color: #39a; font-family: Tahoma">Enter markup for the first paragraph</div>
+            <textarea id="markup" style="margin-bottom: 4px"></textarea>
+            <div><button onlick="updateHTML()">Update</button></div>
+         </div>
+         <div style="margin-top: 20px">
+            <input type="text" id="query" /> <button onclick="findElement(); return false">Find</button>
+         </div>
+         <div style="margin-top: 18px; font-size: 12px; color: #39a; font-family: Tahoma">Recent queries:</div>
+         <div id="recent_queries"></div>
+      </form>
+   </div>
+</body>
+</html>
