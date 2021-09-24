@@ -27,10 +27,13 @@ function find(query) {
    
    results = [];
    
+   var root = this && this.tagName || document
+   
    pos = tryToFindID();
    if (pos >= 0) {
       var n = document.getElementById(getId(parts[pos]).slice(1));
       if (n != null) {
+         if (!isAncestorOf(n, root)) return [];
          var tag = getTag(parts[pos]);
          if (tag && results[0].tagName.toLowerCase() != tag.toLowerCase()) {
             return;
@@ -52,7 +55,7 @@ function find(query) {
       if (pos >= 0) {
          var classes = getClasses(parts[pos]);
          for (var i = 0; i < classes.length; i++) {
-            concat(results, getElementsByClass(classes[i], document, '*'))
+            concat(results, getElementsByClass(classes[i], root, '*'))
          }         
          var tag = getTag(parts[pos]);
          if (tag) {
@@ -245,6 +248,15 @@ function isNthElementChild(el, index) {
       if (c[i-1] == el) {
          return i == index
       }
+   }
+   return false
+}
+
+function isAncestorOf(el, parent) {
+   if (!parent) return false
+   while (el) {
+      if (el == parent) return true
+      el = el.parentNode
    }
    return false
 }
@@ -509,10 +521,23 @@ if (!document.querySelector) {
       return res && res[0] || []
    }
 }
-document.find = find
-document.findOne = function() {
+
+var el = 'HTMLElement' in window && HTMLElement.prototype || 'Element' in window && Element.prototype || null
+
+var f = function() {
    var res = document.querySelectorAll()
    return res && res[0] || []
 }
+
+if (el && !el.querySelector) {
+   el.querySelectorAll = find
+   el.querySelector = f
+}
+
+document.find = find
+document.findOne = f
+
+el.find = find
+el.findOne = f
 
 })(document)
